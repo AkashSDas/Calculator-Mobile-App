@@ -1,3 +1,4 @@
+import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:calculator/styles/styles.dart';
 import 'package:flutter/material.dart';
 
@@ -20,13 +21,14 @@ class _HomeScreenState extends State<HomeScreen> {
       height: MediaQuery.of(context).size.height * 0.4,
       width: double.infinity,
       child: SingleChildScrollView(
-        child: TextField(
+        child: AutoSizeTextField(
           keyboardType: TextInputType.numberWithOptions(
             signed: true,
             decimal: true,
           ),
           // readOnly: true,
-          maxLines: 30,
+          maxLines: 8,
+          minFontSize: 26,
           controller: this._inputController,
           onChanged: (value) => this._updateInputText(),
           style: tnumTextStyle,
