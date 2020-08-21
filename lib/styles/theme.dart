@@ -13,7 +13,7 @@ final tnumTextStyle = TextStyle(
   color: ttext1,
   fontFamily: ttextFamily,
   fontWeight: FontWeight.w400,
-  fontSize: 30.0,
+  fontSize: 40.0,
 );
 
 final tcancelTextStyle = TextStyle(

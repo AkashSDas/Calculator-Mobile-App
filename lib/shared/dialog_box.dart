@@ -9,7 +9,7 @@ void numOverflowAlertDialog({@required BuildContext context}) {
       borderRadius: BorderRadius.circular(10.0),
     ),
     child: Container(
-      height: 100.0,
+      height: 200.0,
       width: 300.0,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
