@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../styles/styles.dart';
 
-void numOverflowAlertDialog({@required BuildContext context}) {
+void alertDialog({@required BuildContext context, @required String text}) {
   Dialog alertDialog = Dialog(
     backgroundColor: tbgSecondary,
     shape: RoundedRectangleBorder(
@@ -18,7 +18,7 @@ void numOverflowAlertDialog({@required BuildContext context}) {
           Padding(
             padding: EdgeInsets.all(15.0),
             child: Text(
-              'Cannot enter more than 15 digits',
+              text,
               style: tnumTextStyle,
             ),
           ),
