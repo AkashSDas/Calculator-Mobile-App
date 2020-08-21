@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:auto_size_text_field/auto_size_text_field.dart';
 import 'package:calculator/shared/dialog_box.dart';
 import 'package:calculator/styles/styles.dart';
 import 'package:flutter/material.dart';
@@ -13,25 +12,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  TextEditingController _inputController = TextEditingController();
   String _inputText = '';
   String _displayResult = '';
 
   void _updateInputText({@required BuildContext context}) {
-    if (_inputController.text.length > 15) {
-      numOverflowAlertDialog(context: context);
+    if (int.parse(this._inputText) >= pow(10, 16)) {
+      print(this._inputText.length);
+      setState(() {
+        _displayResult = int.parse(this._inputText).toStringAsExponential();
+      });
     } else {
-      this._inputText = _inputController.text;
-      if (int.parse(this._inputText) >= pow(10, 16)) {
-        print(this._inputText.length);
-        setState(() {
-          _displayResult = int.parse(this._inputText).toStringAsExponential();
-        });
-      } else {
-        setState(() {
-          _displayResult = this._inputText;
-        });
-      }
+      setState(() {
+        _displayResult = this._inputText;
+      });
     }
   }
 
@@ -39,21 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       alignment: Alignment.topRight,
       height: MediaQuery.of(context).size.height * 0.2,
-      width: double.infinity,
+      width: MediaQuery.of(context).size.width * 0.9,
       child: SingleChildScrollView(
-        child: AutoSizeTextField(
-          keyboardType: TextInputType.numberWithOptions(
-            signed: true,
-            decimal: true,
-          ),
-          // readOnly: true,
+        scrollDirection: Axis.vertical,
+        child: AutoSizeText(
+          '${this._inputText}',
           maxLines: 5,
           minFontSize: 26,
-          controller: this._inputController,
-          onChanged: (value) => this._updateInputText(context: context),
           style: tnumTextStyle,
           textAlign: TextAlign.end,
-          decoration: InputDecoration(border: InputBorder.none),
         ),
       ),
     );
@@ -111,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _textKeyBtn({
     @required String text,
-    @required Function onPressed,
     Color color = const Color(0xFFF4F0F0),
   }) {
     return Container(
@@ -131,7 +117,23 @@ class _HomeScreenState extends State<HomeScreen> {
             fontSize: 40.0,
           ),
         ),
-        onPressed: onPressed,
+        onPressed: () {
+          if (text != 'C') {
+            if ('${this._inputText}{text}'.length > 15 * 20) {
+              numOverflowAlertDialog(context: context);
+            } else {
+              setState(() {
+                this._inputText = this._inputText + text;
+              });
+              this._updateInputText(context: context);
+            }
+          } else if (text == 'C') {
+            setState(() {
+              this._inputText = '';
+              this._displayResult = '';
+            });
+          }
+        },
       ),
     );
   }
@@ -147,7 +149,6 @@ class _HomeScreenState extends State<HomeScreen> {
         this._textKeyBtn(
           text: 'C',
           color: ttext3,
-          onPressed: () => print('Key Pressed'),
         ),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.percent,
@@ -165,18 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        this._textKeyBtn(
-          text: '7',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '8',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '9',
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._textKeyBtn(text: '7'),
+        this._textKeyBtn(text: '8'),
+        this._textKeyBtn(text: '9'),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.times,
           onPressed: () => print('Key Pressed'),
@@ -189,18 +181,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        this._textKeyBtn(
-          text: '4',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '5',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '6',
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._textKeyBtn(text: '4'),
+        this._textKeyBtn(text: '5'),
+        this._textKeyBtn(text: '6'),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.plus,
           onPressed: () => print('Key Pressed'),
@@ -213,18 +196,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        this._textKeyBtn(
-          text: '1',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '2',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '3',
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._textKeyBtn(text: '1'),
+        this._textKeyBtn(text: '2'),
+        this._textKeyBtn(text: '3'),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.minus,
           onPressed: () => print('Key Pressed'),
@@ -241,14 +215,8 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: FontAwesomeIcons.rulerHorizontal,
           onPressed: () => print('Key Pressed'),
         ),
-        this._textKeyBtn(
-          text: '0',
-          onPressed: () => print('Key Pressed'),
-        ),
-        this._textKeyBtn(
-          text: '.',
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._textKeyBtn(text: '0'),
+        this._textKeyBtn(text: '.'),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.equals,
           color: ttext1,
