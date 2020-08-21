@@ -1,10 +1,12 @@
 import 'dart:math';
 
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:calculator/screens/helper.dart';
 import 'package:calculator/shared/dialog_box.dart';
 import 'package:calculator/styles/styles.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:function_tree/function_tree.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,19 +14,54 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _inputText = '';
-  String _displayResult = '';
+  String _displayInputText = ''; // Display operation on screen
+  String _displayResult = ''; // Display result on screen
 
-  void _updateInputText({@required BuildContext context}) {
-    if (int.parse(this._inputText) >= pow(10, 16)) {
-      print(this._inputText.length);
-      setState(() {
-        _displayResult = int.parse(this._inputText).toStringAsExponential();
-      });
-    } else {
-      setState(() {
-        _displayResult = this._inputText;
-      });
+  // Operator functional
+  List<String> _operators = [
+    'add',
+    'subtract',
+    'multiply',
+    'divide',
+    '+',
+    '-',
+    '\u{00D7}',
+    '\u{00F7}',
+  ];
+
+  // List of operations
+  List<String> _operations = [
+    'add',
+    'subtract',
+    'multiply',
+    'divide',
+    'equal',
+    'none',
+  ];
+
+  // All numbers & operators
+  List<String> _calculation = [];
+
+  // Evaluate the mathematical operation
+  void _evaluate(BuildContext context, String inputString) {
+    try {
+      num result = inputString.interpret();
+
+      if (result >= pow(10, 16)) {
+        setState(() {
+          _displayResult = result.toStringAsExponential();
+        });
+      } else {
+        setState(() {
+          _displayResult = result.toString();
+        });
+      }
+    } catch (e) {
+      print(e);
+      alertDialog(
+        context: context,
+        text: '❌ Invalid operation',
+      );
     }
   }
 
@@ -36,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: AutoSizeText(
-          '${this._inputText}',
+          '${this._displayInputText}',
           maxLines: 5,
           minFontSize: 26,
           style: tnumTextStyle,
@@ -66,7 +103,28 @@ class _HomeScreenState extends State<HomeScreen> {
       alignment: Alignment.centerRight,
       margin: EdgeInsets.symmetric(vertical: 8.0),
       child: IconButton(
-        onPressed: () => print('Backspace button clicked'),
+        onPressed: () {
+          if (this._displayInputText.length == 0) {
+            print('Backspace clicked: Nothing on screen');
+          } else {
+            if (this._operators.contains(
+                this._displayInputText[this._displayInputText.length - 1])) {
+              setState(() {
+                this._displayInputText = this
+                    ._displayInputText
+                    .substring(0, this._displayInputText.length - 1);
+              });
+              this._calculation.removeLast();
+            } else {
+              setState(() {
+                this._displayInputText = this
+                    ._displayInputText
+                    .substring(0, this._displayInputText.length - 1);
+              });
+            }
+            print(this._calculation);
+          }
+        },
         icon: FaIcon(
           FontAwesomeIcons.backspace,
           size: 30.0,
@@ -77,14 +135,52 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _iconKeyBtn({
+    BuildContext context,
     @required IconData icon,
-    @required Function onPressed,
+    @required String operation,
     Color color = const Color(0xFF0A8449),
     Color bgColor = const Color(0xFF1B1919),
   }) {
+    Function onPressed;
+
+    if (this._operations.contains(operation)) {
+      if (operation == 'none') {
+        onPressed = () {};
+      } else if (this._operators.contains(operation)) {
+        onPressed = () {
+          if (operation != 'equal') {
+            if (this._calculation.isEmpty) {
+              this._calculation.add(this._displayInputText);
+              this._calculation.add(getOperationSign(operation));
+            } else {
+              String pattern = this._calculation.join('');
+              pattern = pattern.replaceAll('*', '\u{00D7}');
+              pattern = pattern.replaceAll('/', '\u{00F7}');
+              print('********* $pattern ${this._displayInputText}');
+              print('${this._displayInputText.split(pattern)}');
+              String nextNumber = this._displayInputText.split(pattern)[1];
+              this._calculation.add(nextNumber);
+              this._calculation.add(getOperationSign(operation));
+            }
+            setState(() {
+              this._displayInputText =
+                  this._displayInputText + getOperationDisplaySign(operation);
+            });
+          }
+        };
+      } else if (operation == 'equal') {
+        String inputString = this._displayInputText;
+        inputString = inputString.replaceAll('\u{00D7}', '*');
+        inputString = inputString.replaceAll('\u{00F7}', '/');
+        onPressed = () => this._evaluate(context, inputString);
+      } else {
+        onPressed = () {};
+      }
+    }
+
     return Container(
-      height: 70.0,
-      width: 70.0,
+      height: 65.0,
+      width: 65.0,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(20.0),
@@ -101,8 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
     Color color = const Color(0xFFF4F0F0),
   }) {
     return Container(
-      height: 70.0,
-      width: 70.0,
+      height: 65.0,
+      width: 65.0,
       decoration: BoxDecoration(
         color: tbgSecondary,
         borderRadius: BorderRadius.circular(20.0),
@@ -119,18 +215,44 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         onPressed: () {
           if (text != 'C') {
-            if ('${this._inputText}{text}'.length > 15 * 20) {
-              numOverflowAlertDialog(context: context);
+            if (this._calculation.isNotEmpty) {
+              try {
+                String pattern = this._calculation.join('');
+                pattern = pattern.replaceAll('*', '\u{00D7}');
+                pattern = pattern.replaceAll('/', '\u{00F7}');
+                print(pattern);
+                String lastNumberEntered =
+                    this._displayInputText.split(pattern)[1];
+                if ('$lastNumberEntered$text'.length > 15) {
+                  alertDialog(
+                    context: context,
+                    text: 'Cannot enter more than 15 digits',
+                  );
+                } else {
+                  setState(() {
+                    this._displayInputText = this._displayInputText + text;
+                  });
+                }
+              } catch (e) {
+                print(e);
+              }
             } else {
-              setState(() {
-                this._inputText = this._inputText + text;
-              });
-              this._updateInputText(context: context);
+              if (this._displayInputText.length > 15) {
+                alertDialog(
+                  context: context,
+                  text: 'Cannot enter more than 15 digits',
+                );
+              } else {
+                setState(() {
+                  this._displayInputText = this._displayInputText + text;
+                });
+              }
             }
           } else if (text == 'C') {
             setState(() {
-              this._inputText = '';
+              this._displayInputText = '';
               this._displayResult = '';
+              this._calculation = [];
             });
           }
         },
@@ -144,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: <Widget>[
         this._iconKeyBtn(
           icon: FontAwesomeIcons.clock,
-          onPressed: () => print('Key Pressed'),
+          operation: 'none',
         ),
         this._textKeyBtn(
           text: 'C',
@@ -152,12 +274,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         this._iconKeyBtn(
           icon: FontAwesomeIcons.percent,
-          onPressed: () => print('Key Pressed'),
+          operation: 'none',
         ),
-        this._iconKeyBtn(
-          icon: FontAwesomeIcons.divide,
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._iconKeyBtn(icon: FontAwesomeIcons.divide, operation: 'divide'),
       ],
     );
   }
@@ -169,10 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
         this._textKeyBtn(text: '7'),
         this._textKeyBtn(text: '8'),
         this._textKeyBtn(text: '9'),
-        this._iconKeyBtn(
-          icon: FontAwesomeIcons.times,
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._iconKeyBtn(icon: FontAwesomeIcons.times, operation: 'multiply'),
       ],
     );
   }
@@ -184,10 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
         this._textKeyBtn(text: '4'),
         this._textKeyBtn(text: '5'),
         this._textKeyBtn(text: '6'),
-        this._iconKeyBtn(
-          icon: FontAwesomeIcons.plus,
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._iconKeyBtn(icon: FontAwesomeIcons.plus, operation: 'add'),
       ],
     );
   }
@@ -199,35 +312,33 @@ class _HomeScreenState extends State<HomeScreen> {
         this._textKeyBtn(text: '1'),
         this._textKeyBtn(text: '2'),
         this._textKeyBtn(text: '3'),
-        this._iconKeyBtn(
-          icon: FontAwesomeIcons.minus,
-          onPressed: () => print('Key Pressed'),
-        ),
+        this._iconKeyBtn(icon: FontAwesomeIcons.minus, operation: 'subtract'),
       ],
     );
   }
 
-  Widget _buildRow5InKeysGrid() {
+  Widget _buildRow5InKeysGrid({BuildContext context}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         this._iconKeyBtn(
           icon: FontAwesomeIcons.rulerHorizontal,
-          onPressed: () => print('Key Pressed'),
+          operation: 'none',
         ),
         this._textKeyBtn(text: '0'),
         this._textKeyBtn(text: '.'),
         this._iconKeyBtn(
+          context: context,
           icon: FontAwesomeIcons.equals,
+          operation: 'equal',
           color: ttext1,
           bgColor: ttext2,
-          onPressed: () => print('Key Pressed'),
         ),
       ],
     );
   }
 
-  Widget _buildKeysGrid() {
+  Widget _buildKeysGrid({BuildContext context}) {
     return Column(
       children: <Widget>[
         this._buildRow1InKeysGrid(),
@@ -238,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(height: 18),
         this._buildRow4InKeysGrid(),
         SizedBox(height: 18),
-        this._buildRow5InKeysGrid(),
+        this._buildRow5InKeysGrid(context: context),
       ],
     );
   }
@@ -257,8 +368,8 @@ class _HomeScreenState extends State<HomeScreen> {
               this._buildInputField(context: context),
               this._buildTextField(),
               this._buildBackspaceContainer(),
-              Divider(height: 10.0, color: ttext1),
-              this._buildKeysGrid(),
+              Divider(height: 20.0, color: ttext1),
+              this._buildKeysGrid(context: context),
             ],
           ),
         ),
